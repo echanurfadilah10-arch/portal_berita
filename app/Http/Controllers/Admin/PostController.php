@@ -7,6 +7,7 @@ use App\Models\Post;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PostController extends Controller
 {
@@ -27,16 +28,16 @@ class PostController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
-            'image' => 'required|url',
-            'content' => 'required|string',
+            'content' => 'required',
+            'image' => 'required|string',
         ]);
 
         Post::create([
-            'category_id' => $request->category_id,
             'title' => $request->title,
             'slug' => Str::slug($request->title),
-            'image' => $request->image,
+            'category_id' => $request->category_id,
             'content' => $request->content,
+            'image' => $request->image,
         ]);
 
         return redirect()->route('admin.posts.index')->with('success', 'Berita berhasil ditambahkan!');
@@ -53,16 +54,16 @@ class PostController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
-            'image' => 'required|url',
-            'content' => 'required|string',
+            'content' => 'required',
+            'image' => 'required|string',
         ]);
 
         $post->update([
-            'category_id' => $request->category_id,
             'title' => $request->title,
             'slug' => Str::slug($request->title),
-            'image' => $request->image,
+            'category_id' => $request->category_id,
             'content' => $request->content,
+            'image' => $request->image,
         ]);
 
         return redirect()->route('admin.posts.index')->with('success', 'Berita berhasil diperbarui!');
@@ -72,5 +73,13 @@ class PostController extends Controller
     {
         $post->delete();
         return redirect()->route('admin.posts.index')->with('success', 'Berita berhasil dihapus!');
+    }
+
+    // Fungsi Cetak Laporan PDF
+    public function cetakPdf()
+    {
+        $posts = Post::with('category')->latest()->get();
+        $pdf = Pdf::loadView('admin.posts.pdf', compact('posts'));
+        return $pdf->stream('laporan-berita.pdf');
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\PostController as AdminPostController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -10,7 +11,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function (Request $request) {
     $query = Post::with('category');
     
-    // Jika user melakukan pencarian
     if ($request->has('search') && $request->search != '') {
         $query->where('title', 'like', '%' . $request->search . '%');
     }
@@ -24,9 +24,10 @@ Route::get('/posts/{post:slug}', function (Post $post) {
     return view('posts.show', compact('post'));
 });
 
-// Route Bawaan Laravel Breeze (Dashboard User)
+// Route Dashboard User / Admin
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    $posts = Post::with('category')->latest()->get();
+    return view('dashboard', compact('posts'));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // Route Profil Pengguna
@@ -36,9 +37,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// Route Khusus Admin untuk Mengelola Berita (CRUD)
+// Route Khusus Admin untuk Mengelola Berita & Kategori (CRUD + Cetak PDF)
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('posts/cetak-pdf', [AdminPostController::class, 'cetakPdf'])->name('posts.cetak-pdf');
     Route::resource('posts', AdminPostController::class);
+    Route::resource('categories', AdminCategoryController::class);
 });
 
 require __DIR__.'/auth.php';
